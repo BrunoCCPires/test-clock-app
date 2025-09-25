@@ -1,0 +1,1 @@
+Updated App.tsx to show a clock and App.css to make it fullscreen with red background. The clock will update every second.
