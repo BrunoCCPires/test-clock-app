@@ -383,24 +383,34 @@ jobs:
       - name: Extract Netlify deployment URL
         if: env.PREVIEW_BUILD_SUCCESS == 'true'
         run: |
-          # Extract preview URL from Netlify action output
-          DEPLOY_URL="${{ steps.netlify-deploy.outputs.NETLIFY_URL }}"
-
-          # If the action output is empty, try parsing the raw output
-          if [ -z "$DEPLOY_URL" ]; then
-            echo "⚠️ No URL from action outputs, checking for alternative sources..."
-            # The Netlify action should set NETLIFY_URL but sometimes it doesn't work reliably
-            DEPLOY_URL="$NETLIFY_URL"
-          fi
+          # Extract preview URL from environment variable set in previous step
+          DEPLOY_URL="$NETLIFY_URL"
 
           if [ -n "$DEPLOY_URL" ]; then
             echo "✅ Preview deployed: $DEPLOY_URL"
             echo "PREVIEW_URL=$DEPLOY_URL" >> $GITHUB_ENV
           else
             echo "⚠️ No deployment URL received from Netlify"
-            echo "Action outputs available:"
-            echo "NETLIFY_URL: ${{ steps.netlify-deploy.outputs.NETLIFY_URL }}"
-            echo "Environment NETLIFY_URL: $NETLIFY_URL"
+            echo "Checking for deploy_output.json..."
+            if [ -f "deploy_output.json" ]; then
+              echo "Deploy output contents:"
+              cat deploy_output.json
+
+              # Try alternative JSON parsing methods
+              DEPLOY_URL=$(cat deploy_output.json | jq -r '.deploy_url // empty' 2>/dev/null || echo "")
+              if [ -z "$DEPLOY_URL" ]; then
+                DEPLOY_URL=$(cat deploy_output.json | grep -o 'https://[^"]*\.netlify\.app' | head -1 || echo "")
+              fi
+
+              if [ -n "$DEPLOY_URL" ]; then
+                echo "✅ Extracted URL: $DEPLOY_URL"
+                echo "PREVIEW_URL=$DEPLOY_URL" >> $GITHUB_ENV
+              else
+                echo "❌ Could not extract URL from deploy output"
+              fi
+            else
+              echo "❌ deploy_output.json not found"
+            fi
           fi
 
       - name: Install Playwright browsers
