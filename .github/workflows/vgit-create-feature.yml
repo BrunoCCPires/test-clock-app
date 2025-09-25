@@ -358,9 +358,24 @@ jobs:
       - name: Deploy to Netlify (if build succeeded)
         id: netlify-deploy
         if: env.PREVIEW_BUILD_SUCCESS == 'true'
-        uses: netlify/actions/cli@master
-        with:
-          args: deploy --dir=${{ env.BUILD_DIR }} --no-build --json
+        run: |
+          echo "🚀 Installing and using Netlify CLI directly..."
+          npm install -g netlify-cli
+
+          # Deploy and capture output
+          netlify deploy --dir=${{ env.BUILD_DIR }} --json > deploy_output.json
+
+          # Extract URLs from output
+          cat deploy_output.json
+          DEPLOY_URL=$(cat deploy_output.json | grep -o '"deploy_url":"[^"]*' | cut -d'"' -f4)
+
+          if [ -n "$DEPLOY_URL" ]; then
+            echo "NETLIFY_URL=$DEPLOY_URL" >> $GITHUB_ENV
+            echo "✅ Deployed to: $DEPLOY_URL"
+          else
+            echo "⚠️ Could not extract deployment URL"
+            cat deploy_output.json
+          fi
         env:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
