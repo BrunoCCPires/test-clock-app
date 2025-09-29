@@ -187,6 +187,16 @@ jobs:
           echo "✅ Claude Code CLI installed"
           claude --version
 
+      - name: Check for CLAUDE.md
+        run: |
+          echo "📄 Checking for CLAUDE.md project instructions..."
+          if [ -f "CLAUDE.md" ]; then
+            echo "✅ Found CLAUDE.md - Claude Code will use project-specific instructions"
+            wc -l CLAUDE.md | awk '{print "  Lines:", $1}'
+          else
+            echo "ℹ️ No CLAUDE.md found - using generic instructions"
+          fi
+
       - name: Implement feature with Claude Code CLI
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -195,7 +205,7 @@ jobs:
 
           # Create prompt file
           cat > feature_prompt.txt << 'PROMPT_EOF'
-          You are implementing a new feature for this project. Please implement the following feature request:
+          Please implement the following feature request:
 
           **Feature Request:** ${{ github.event.inputs.request }}
 
@@ -205,26 +215,30 @@ jobs:
           - Base Branch: ${{ github.event.inputs.base_branch }}
           - Requested by: ${{ github.event.inputs.username }}
 
-          **Implementation Guidelines:**
-          1. Analyze the existing codebase structure and patterns
-          2. Implement the feature following the project's conventions (TypeScript + Vite + React)
-          3. If you need to add dependencies, update package.json accordingly
-          4. Ensure the code compiles and follows best practices
-          5. Make minimal, focused changes that accomplish the feature request
-          6. If creating UI components, update src/App.tsx and related files
-          7. Consider the project's existing architecture and state management
+          **CRITICAL - Read Project Instructions First:**
+          1. Check if there is a CLAUDE.md file in the repository root
+          2. If CLAUDE.md exists, READ IT FIRST and follow ALL guidelines specified there
+          3. The CLAUDE.md file contains critical project-specific instructions, architecture details, and conventions
+          4. All implementation decisions should follow the patterns and guidelines in CLAUDE.md
 
-          **Important Notes:**
-          - This is a TypeScript + Vite + React project
-          - Prefer TypeScript over JavaScript for new files
-          - Follow existing code patterns and conventions
+          **Implementation Steps:**
+          1. Read CLAUDE.md if it exists (this is mandatory!)
+          2. Analyze the existing codebase structure and patterns
+          3. Implement the feature following the project's conventions from CLAUDE.md
+          4. If you need to add dependencies, update package.json accordingly
+          5. Ensure the code compiles and follows best practices
+          6. Make minimal, focused changes that accomplish the feature request
+
+          **Important:**
+          - CLAUDE.md is your primary source of truth for this project
           - Ensure all changes are production-ready
           - Do not make unnecessary changes outside the feature scope
 
-          Please implement this feature now.
+          Start by reading CLAUDE.md (if present), then implement the feature.
           PROMPT_EOF
 
           # Run Claude Code CLI with the prompt
+          # The CLI will automatically detect and use CLAUDE.md through the prompt instructions
           claude --allowedTools Edit,Read,Write,Glob,Grep < feature_prompt.txt || {
             echo "⚠️ Claude Code CLI execution had issues, checking for changes..."
           }
