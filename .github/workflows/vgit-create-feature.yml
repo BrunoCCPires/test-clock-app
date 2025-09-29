@@ -41,7 +41,6 @@ jobs:
     permissions:
       contents: write # For git operations (checkout, commit, push)
       actions: read # For workflow operations
-      id-token: write # For Claude Code action OIDC authentication
 
     steps:
       - name: Validate inputs
@@ -181,52 +180,56 @@ jobs:
             chmod +x runtime_env_setup.sh
           fi
 
-      - name: Implement feature with Claude Code
-        uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          settings: |
-            {
-              "permissions": {
-                "allow": [
-                  "Read(*)",
-                  "Edit(*)",
-                  "Write(*)",
-                  "Glob(*)",
-                  "Grep(*)"
-                ]
-              }
-            }
-          claude_args: |
-            --allowedTools Edit,Read,Write,Glob,Grep
-          prompt: |
-            You are implementing a new feature for this project. Please implement the following feature request:
+      - name: Install Claude Code CLI
+        run: |
+          echo "📦 Installing Claude Code CLI..."
+          npm install -g @anthropic-ai/claude-code
+          echo "✅ Claude Code CLI installed"
+          claude --version
 
-            **Feature Request:** ${{ github.event.inputs.request }}
+      - name: Implement feature with Claude Code CLI
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          echo "🤖 Running Claude Code CLI to implement feature..."
 
-            **Project Context:**
-            - Repository: ${{ github.repository }}
-            - Branch: ${{ github.event.inputs.branch_name }}
-            - Base Branch: ${{ github.event.inputs.base_branch }}
-            - Requested by: ${{ github.event.inputs.username }}
+          # Create prompt file
+          cat > feature_prompt.txt << 'PROMPT_EOF'
+          You are implementing a new feature for this project. Please implement the following feature request:
 
-            **Implementation Guidelines:**
-            1. Analyze the existing codebase structure and patterns
-            2. Implement the feature following the project's conventions (TypeScript + Vite + React)
-            3. If you need to add dependencies, update package.json accordingly
-            4. Ensure the code compiles and follows best practices
-            5. Make minimal, focused changes that accomplish the feature request
-            6. If creating UI components, update src/App.tsx and related files
-            7. Consider the project's existing architecture and state management
+          **Feature Request:** ${{ github.event.inputs.request }}
 
-            **Important Notes:**
-            - This is a TypeScript + Vite + React project
-            - Prefer TypeScript over JavaScript for new files
-            - Follow existing code patterns and conventions
-            - Ensure all changes are production-ready
-            - Do not make unnecessary changes outside the feature scope
+          **Project Context:**
+          - Repository: ${{ github.repository }}
+          - Branch: ${{ github.event.inputs.branch_name }}
+          - Base Branch: ${{ github.event.inputs.base_branch }}
+          - Requested by: ${{ github.event.inputs.username }}
 
-            Please implement this feature now using the tools available to you (Read, Edit, Write, Glob, Grep).
+          **Implementation Guidelines:**
+          1. Analyze the existing codebase structure and patterns
+          2. Implement the feature following the project's conventions (TypeScript + Vite + React)
+          3. If you need to add dependencies, update package.json accordingly
+          4. Ensure the code compiles and follows best practices
+          5. Make minimal, focused changes that accomplish the feature request
+          6. If creating UI components, update src/App.tsx and related files
+          7. Consider the project's existing architecture and state management
+
+          **Important Notes:**
+          - This is a TypeScript + Vite + React project
+          - Prefer TypeScript over JavaScript for new files
+          - Follow existing code patterns and conventions
+          - Ensure all changes are production-ready
+          - Do not make unnecessary changes outside the feature scope
+
+          Please implement this feature now.
+          PROMPT_EOF
+
+          # Run Claude Code CLI with the prompt
+          claude --allowedTools Edit,Read,Write,Glob,Grep < feature_prompt.txt || {
+            echo "⚠️ Claude Code CLI execution had issues, checking for changes..."
+          }
+
+          echo "✅ Claude Code CLI execution completed"
 
       - name: Install new dependencies (if package.json changed)
         run: |
