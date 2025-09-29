@@ -1,0 +1,30 @@
+Please implement the following feature request:
+
+**Feature Request:** now make bg red, and ful screen with the clock in the middle
+
+**Project Context:**
+- Repository: BrunoCCPires/test-clock-app
+- Branch: test3
+- Base Branch: main
+- Requested by: BrunoCCPires
+
+**CRITICAL - Read Project Instructions First:**
+1. Check if there is a CLAUDE.md file in the repository root
+2. If CLAUDE.md exists, READ IT FIRST and follow ALL guidelines specified there
+3. The CLAUDE.md file contains critical project-specific instructions, architecture details, and conventions
+4. All implementation decisions should follow the patterns and guidelines in CLAUDE.md
+
+**Implementation Steps:**
+1. Read CLAUDE.md if it exists (this is mandatory!)
+2. Analyze the existing codebase structure and patterns
+3. Implement the feature following the project's conventions from CLAUDE.md
+4. If you need to add dependencies, update package.json accordingly
+5. Ensure the code compiles and follows best practices
+6. Make minimal, focused changes that accomplish the feature request
+
+**Important:**
+- CLAUDE.md is your primary source of truth for this project
+- Ensure all changes are production-ready
+- Do not make unnecessary changes outside the feature scope
+
+Start by reading CLAUDE.md (if present), then implement the feature.
